@@ -39,7 +39,7 @@ func ListenForConnections(ctx context.Context, registrar ServiceRegistrar, addr,
 
 	registrar.RegisterGrpcServer(srv)
 
-	logrus.Infof("%s listening... at address %s", serviceName, addr)
+	logrus.Infof("%s running at address %s", serviceName, addr)
 
 	go listenForStopped(ctx, srv, serviceName)
 

@@ -36,7 +36,22 @@ func main() {
 	}
 	serviceId := os.Getenv("user.service.id")
 	address := os.Getenv("user.service.address")
-	service := user_service.NewService(address, serviceId, *firestoreClient)
+	passwordSecret := os.Getenv("global.service.password_secret")
+	passwordIv := os.Getenv("global.service.password_iv")
+	environment := os.Getenv("user.service.environment")
+
+	userServiceConfig := user_service.UserServiceConfig{
+		Environment:    environment,
+		ServiceId:      serviceId,
+		Address:        address,
+		PasswordSecret: passwordSecret,
+		PasswordIv:     passwordIv,
+	}
+
+	service := user_service.NewService(
+		userServiceConfig,
+		*firestoreClient,
+	)
 
 	service.ListenForConnections(context.TODO())
 

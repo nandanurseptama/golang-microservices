@@ -5,11 +5,13 @@ import (
 
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go"
-	"github.com/sirupsen/logrus"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
 
-type FirestoreClient = firestore.Client
+type FirestoreClient struct {
+	*firestore.Client
+}
 
 // Initiate firestore client
 //
@@ -22,8 +24,48 @@ func NewClient(serviceAccountPath string) (*FirestoreClient, error) {
 	sa := option.WithCredentialsFile(serviceAccountPath)
 	app, err := firebase.NewApp(ctx, nil, sa)
 	if err != nil {
-		logrus.Error(err)
+		return nil, err
 	}
+	client, err := app.Firestore(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &FirestoreClient{client}, nil
+}
 
-	return app.Firestore(ctx)
+func (f *FirestoreClient) GetCollection(path string) *CollectionRef {
+	return &CollectionRef{f.Collection(path)}
+}
+
+type CollectionRef struct {
+	*firestore.CollectionRef
+}
+
+func (c *CollectionRef) WhereColumn(path string, op string, value interface{}) Query {
+	return Query{c.Where(path, op, value)}
+}
+
+type Query struct {
+	firestore.Query
+}
+
+func (d Query) GetOne(
+	ctx context.Context,
+) (map[string]interface{}, error) {
+
+	iter := d.Limit(1).Documents(ctx)
+
+	var result map[string]interface{}
+
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		result = doc.Data()
+	}
+	return result, nil
 }

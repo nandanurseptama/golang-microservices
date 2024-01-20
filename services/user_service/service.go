@@ -15,18 +15,22 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-const serviceName = "user service"
-
+type UserServiceConfig struct {
+	Environment    string
+	ServiceId      string
+	Address        string
+	PasswordSecret string
+	PasswordIv     string
+}
 type service struct {
 	pb.UnimplementedUserServiceServer
 	usecases interfaces.Usecases
-	address  string
+	config   UserServiceConfig
 	logger   *logrus.Entry
 }
 
 func NewService(
-	address string,
-	serviceId string,
+	config UserServiceConfig,
 	firestoreClient firestore.FirestoreClient,
 ) *service {
 	logger := logrus.New()
@@ -35,14 +39,16 @@ func NewService(
 		FullTimestamp: true,
 	})
 	ctxLogger := logger.WithFields(logrus.Fields{
-		"service": serviceId,
+		"service": config.ServiceId,
 	})
 	return &service{
-		address: address,
 		usecases: internal.NewUsecases(
 			firestoreClient,
 			ctxLogger,
+			config.PasswordSecret,
+			config.PasswordIv,
 		),
+		config: config,
 		logger: ctxLogger,
 	}
 }
@@ -52,7 +58,7 @@ func (svc *service) RegisterGrpcServer(server *grpcLib.Server) {
 }
 
 func (svc *service) ListenForConnections(ctx context.Context) {
-	grpc.ListenForConnections(ctx, svc, svc.address, serviceName)
+	grpc.ListenForConnections(ctx, svc, svc.config.Address, svc.config.ServiceId)
 }
 
 func (svc *service) GetUserByEmail(
