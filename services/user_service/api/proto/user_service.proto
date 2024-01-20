@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package user_service;
+
+option go_package = "github.com/nandanurseptama/golang-microservices/user_service/api/proto";
+
+service UserService {
+  rpc GetUserByEmail(GetUserByEmailRequest) returns(User);
+
+  rpc CreateUser(CreateUserRequest) returns(User);
+}
+
+message GetUserByEmailRequest {
+  string email = 1;
+}
+message User{
+  string id = 1;
+  string email = 2;
+  string password = 3;
+  string createdAt = 4;
+  optional string updatedAt = 5;
+  optional string deletedAt = 6;
+}
+message CreateUserRequest{
+  string email = 1;
+  string password = 2;
+}
